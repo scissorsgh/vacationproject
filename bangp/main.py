@@ -3,6 +3,7 @@ from typing import List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from transformers import pipeline
+import uvicorn
 
 # ──────────────────────────────────────────────────────────────────────
 # 모델 로드(요약)
@@ -77,5 +78,4 @@ def summarize(req: SummarizeRequest):
 # 서버 실행용 코드
 # ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)

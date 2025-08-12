@@ -2,6 +2,8 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import re
+import json
+from fastapi import HTTPException
 
 app = FastAPI()
 
@@ -22,6 +24,25 @@ class AnswerCheckIn(BaseModel):
 class AnswerCheckOut(BaseModel):
     correct: bool
     similarity: float  # 0~1 사이 (정답과 비슷한 정도)
+
+SUMMARY_FILE = "summary.json"
+
+def load_summary():
+    try:
+        with open(SUMMARY_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data.get("summary", "")
+    except FileNotFoundError:
+        return ""
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def save_summary(summary: str):
+    try:
+        with open(SUMMARY_FILE, "w", encoding="utf-8") as f:
+            json.dump({"summary": summary}, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ----------------------
 # 간단한 문장 추출 함수
@@ -68,6 +89,22 @@ def check_answer(data: AnswerCheckIn):
         correct=similarity >= 0.5,  # 50% 이상 같으면 정답 처리
         similarity=round(similarity, 2)
     )
+
+# ----------------------
+# 요약본 조회 API
+# ----------------------
+@app.get("/summary")
+def get_summary():
+    summary = load_summary()
+    return {"summary": summary}
+
+# ----------------------
+# 요약본 수정 API
+# ----------------------
+@app.post("/summary")
+def update_summary(data: SummaryIn):
+    save_summary(data.summary)
+    return {"message": "요약이 저장되었습니다.", "summary": data.summary}
 
 # ----------------------
 # 서버 상태 확인
